@@ -2,9 +2,7 @@ import matplotlib.pyplot as plt
 import csv
 import matplotlib.dates as mdates
 
-csvfile = input("What's your fucking directory m8")
-
-
+csvfile = "Data/stock_dfs/AAPL.csv"
 csvValues = []
 
 def init(csvfile):
