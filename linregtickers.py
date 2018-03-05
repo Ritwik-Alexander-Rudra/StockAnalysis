@@ -11,14 +11,14 @@ import csv
 
 style.use('ggplot')
 
-df = pd.read_csv('AAPL.csv')
+df = pd.read_csv('tsla.csv')
 
 df = df[['Open', 'High',  'Low',  'Close', 'Volume']]
 df['HL_PCT'] = (df['High'] - df['Low']) / df['Close'] * 100.0
 df['PCT_change'] = (df['Close'] - df['Open']) / df['Open'] * 100.0
 
 df = df[['Close', 'HL_PCT', 'PCT_change', 'Volume']]
-forecast_col = 'Adj. Close'
+forecast_col = 'Close'
 df.fillna(value=-99999, inplace=True)
 forecast_out = int(math.ceil(0.1 * len(df)))
 
@@ -52,7 +52,7 @@ for i in forecast_set:
     next_date = datetime.datetime.fromtimestamp(next_unix)
     next_unix += 86400
     df.loc[next_date] = [np.nan for _ in range(len(df.columns)-1)]+[i]
-df['Adj. Close'].plot()
+df['Close'].plot()
 df['Forecast'].plot()
 plt.legend(loc=4)
 plt.xlabel('Date')
