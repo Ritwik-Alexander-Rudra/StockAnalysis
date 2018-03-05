@@ -5,7 +5,6 @@ from sklearn import preprocessing, cross_validation, svm
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 from matplotlib import style
-import matplotlib.dates as mdates
 import datetime
 import pickle
 import csv
@@ -14,8 +13,9 @@ import time
 import arrow
 import requests
 import bs4 as bs
-quandl.ApiConfig.api_key = '5bJJjfrSVFqoMTeNsuCJ'
+
 tickers = []
+
 def makeTickerArray():
     resp = requests.get('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
     soup = bs.BeautifulSoup(resp.text, "lxml")
@@ -30,23 +30,24 @@ def makeTickerArray():
 
 def makeGraph(company_ticker):
     style.use('ggplot')
-    df = quandl.get("WIKI/" + company_ticker)
-    #df = pd.read_csv(company_ticker+".csv")
-    df = df[['Adj. Open', 'Adj. High',  'Adj. Low',  'Adj. Close', 'Adj. Volume']]
-    df['HL_PCT'] = (df['Adj. High'] - df['Adj. Low']) / df['Adj. Close'] * 100.0
-    df['PCT_change'] = (df['Adj. Close'] - df['Adj. Open']) / df['Adj. Open'] * 100.0
 
-    df = df[['Adj. Close', 'HL_PCT', 'PCT_change', 'Adj. Volume']]
-    forecast_col = 'Adj. Close'
+    df = pd.read_csv(company_ticker+".csv")
+
+    df = df[['Open', 'High',  'Low',  'Close', 'Volume']]
+    df['HL_PCT'] = (df['High'] - df['Low']) / df['Close'] * 100.0
+    df['PCT_change'] = (df['Close'] - df['Open']) / df['Open'] * 100.0
+
+    df = df[['Close', 'HL_PCT', 'PCT_change', 'Volume']]
+    forecast_col = 'Close'
     df.fillna(value=-99999, inplace=True)
-    forecast_out = int(math.ceil(0.01 * len(df)))
+    forecast_out = int(math.ceil(0.1 * len(df)))
 
     df['label'] = df[forecast_col].shift(-forecast_out)
 
-    X = np.array(df.drop(['label'], 1))
+`    X = np.array(df.drop(['label'], 1))
     X = preprocessing.scale(X)
     X_lately = X[-forecast_out:]
-    X = X[:-forecast_out:]
+    X = X[:-forecast_out]
 
     df.dropna(inplace=True)
 
@@ -54,10 +55,10 @@ def makeGraph(company_ticker):
 
     X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.2)
     #COMMENTED OUT:
-    clf = LinearRegression()
-    clf.fit(X_train, y_train)
-    with open('linearregression.pickle','wb') as f:
-        pickle.dump(clf, f)
+##    clf = LinearRegression(n_jobs = -1)
+##    clf.fit(X_train, y_train)
+##    with open('linearregression.pickle','wb') as f:
+##        pickle.dump(clf, f)
 
     pickle_in = open('linearregression.pickle', 'rb')
     clf = pickle.load(pickle_in)
@@ -73,7 +74,7 @@ def makeGraph(company_ticker):
         next_date = datetime.datetime.fromtimestamp(next_unix)
         next_unix += 86400
         df.loc[next_date] = [np.nan for _ in range(len(df.columns)-1)]+[i]
-    df['Adj. Close'].plot()
+    df['Close'].plot()
     df['Forecast'].plot()
     plt.legend(loc=4)
     plt.xlabel('Date')
@@ -81,7 +82,7 @@ def makeGraph(company_ticker):
     plt.title("Historical and Projected Stock Price of " + company_ticker)
     plt.show()
 
-
 makeTickerArray()
-for i in range(1):
-    makeGraph('AAPL')
+#for i in range(10):
+#   makeGraph(tickers[i])
+makeGraph("GOOGL")
